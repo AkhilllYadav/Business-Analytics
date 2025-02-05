@@ -5,6 +5,7 @@ description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.45.2",
+    "google-generativeai",
     "nltk>=3.9.1",
     "numpy>=2.2.2",
     "openai>=1.61.0",

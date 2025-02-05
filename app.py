@@ -6,6 +6,7 @@ from utils.predictions import AdvancedPredictions  # Fixed import
 from utils.advanced_analytics import AdvancedAnalytics
 import io
 import numpy as np
+from utils.gemini_analytics import GeminiAnalytics
 
 # Page configuration and styling
 st.set_page_config(page_title="Business Analytics Dashboard",
@@ -43,7 +44,7 @@ def main():
         # Navigation
         page = st.radio("", [
             "📥 Data Upload", "📈 Sales Analytics", "🎯 Marketing Analytics",
-            "⭐ Review Analytics", "🔮 Predictions"
+            "⭐ Review Analytics", "🔮 Predictions", "🤖 AI Insights"
         ])
 
     # Main content area with modern header
@@ -65,6 +66,8 @@ def main():
         show_review_analytics()
     elif "Predictions" in page:
         show_predictions()
+    elif "AI Insights" in page:
+        show_ai_insights()
 
 
 def show_data_upload():
@@ -368,9 +371,9 @@ def show_predictions():
                 """, unsafe_allow_html=True)
 
                 # Style the dataframe
-                styled_recommendations = recommendations.style\
-                    .background_gradient(cmap='Blues', subset=['composite_score'])\
-                    .background_gradient(cmap='RdYlGn', subset=['revenue_growth', 'quantity_growth'])\
+                styled_recommendations = recommendations.style \
+                    .background_gradient(cmap='Blues', subset=['composite_score']) \
+                    .background_gradient(cmap='RdYlGn', subset=['revenue_growth', 'quantity_growth']) \
                     .format({
                         'total_revenue': '${:,.2f}',
                         'avg_transaction_value': '${:,.2f}',
@@ -415,6 +418,160 @@ def show_predictions():
 
         except Exception as e:
             st.error(f"An error occurred while analyzing products: {str(e)}")
+
+
+def show_ai_insights():
+    if any(data is None for data in [st.session_state.sales_data,
+                                    st.session_state.marketing_data,
+                                    st.session_state.review_data]):
+        st.warning("⚠️ Please upload all data (sales, marketing, and reviews) first!")
+        return
+
+    st.header("🤖 AI-Powered Analytics Insights")
+
+    # Executive Summary
+    st.subheader("📊 Executive Summary")
+    with st.spinner("Generating executive summary..."):
+        summary = GeminiAnalytics.create_executive_summary(
+            st.session_state.sales_data,
+            st.session_state.marketing_data,
+            st.session_state.review_data
+        )
+
+        if summary:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Key Achievements</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for achievement in summary['key_achievements']:
+                    st.success(achievement)
+
+            with col2:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Growth Opportunities</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for opportunity in summary['growth_opportunities']:
+                    st.info(opportunity)
+
+    # Customer Behavior Analysis
+    st.subheader("👥 Customer Behavior Analysis")
+    with st.spinner("Analyzing customer behavior..."):
+        behavior_insights = GeminiAnalytics.analyze_customer_behavior(
+            st.session_state.sales_data
+        )
+
+        if behavior_insights:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Key Findings</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for finding in behavior_insights['key_findings']:
+                    st.write(f"• {finding}")
+
+            with col2:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Recommendations</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for rec in behavior_insights['recommendations']:
+                    st.write(f"• {rec}")
+
+    # Advanced Sentiment Analysis
+    st.subheader("💭 Advanced Sentiment Analysis")
+    with st.spinner("Performing sentiment analysis..."):
+        sentiment_insights = GeminiAnalytics.analyze_review_sentiment(
+            st.session_state.review_data
+        )
+
+        if sentiment_insights:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Key Themes</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for theme in sentiment_insights['key_themes']:
+                    st.write(f"• {theme}")
+
+            with col2:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Areas for Improvement</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for area in sentiment_insights['improvement_areas']:
+                    st.write(f"• {area}")
+
+    # Anomaly Detection
+    st.subheader("⚠️ Anomaly Detection")
+    with st.spinner("Detecting anomalies..."):
+        anomalies = GeminiAnalytics.detect_anomalies(
+            st.session_state.sales_data
+        )
+
+        if anomalies:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Detected Anomalies</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for anomaly in anomalies['anomalies_detected']:
+                    st.warning(anomaly)
+
+            with col2:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Risk Factors</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for risk in anomalies['risk_factors']:
+                    st.error(risk)
+
+    # Marketing Performance Analysis
+    st.subheader("📢 AI-Driven Marketing Insights")
+    with st.spinner("Analyzing marketing performance..."):
+        marketing_insights = GeminiAnalytics.generate_marketing_insights(
+            st.session_state.marketing_data,
+            st.session_state.sales_data
+        )
+
+        if marketing_insights:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Performance Insights</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for insight in marketing_insights['performance_insights']:
+                    st.write(f"• {insight}")
+
+            with col2:
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Optimization Suggestions</h4>
+                    </div>
+                """, unsafe_allow_html=True)
+                for suggestion in marketing_insights['optimization_suggestions']:
+                    st.write(f"• {suggestion}")
+
 
 if __name__ == "__main__":
     main()
