@@ -2,11 +2,12 @@ import streamlit as st
 import pandas as pd
 from utils.data_processor import DataProcessor
 from utils.visualizations import create_sales_charts, create_marketing_charts, create_review_charts
-from utils.predictions import AdvancedPredictions  # Fixed import
+from utils.predictions import AdvancedPredictions
 from utils.advanced_analytics import AdvancedAnalytics
+from utils.gemini_analytics import GeminiAnalytics
+from utils.auth import check_password
 import io
 import numpy as np
-from utils.gemini_analytics import GeminiAnalytics
 
 # Page configuration and styling
 st.set_page_config(page_title="Business Analytics Dashboard",
@@ -18,7 +19,7 @@ st.set_page_config(page_title="Business Analytics Dashboard",
 if 'theme' not in st.session_state:
     st.session_state.theme = 'light'
 
-# Initialize session state
+# Initialize session state for data
 if 'sales_data' not in st.session_state:
     st.session_state.sales_data = None
 if 'marketing_data' not in st.session_state:
@@ -26,13 +27,21 @@ if 'marketing_data' not in st.session_state:
 if 'review_data' not in st.session_state:
     st.session_state.review_data = None
 
-
 def main():
-    # Sidebar with modern styling
+    # Check authentication before showing any content
+    if not check_password():
+        return
+
+    # Rest of your main function remains unchanged
     with st.sidebar:
         st.image("https://img.icons8.com/color/96/000000/dashboard-layout.png",
                  width=50)
         st.title("Navigation")
+
+        # Add logout button in sidebar
+        if st.button("Logout"):
+            st.session_state["password_correct"] = False
+            st.rerun()
 
         # Theme toggle
         theme = st.select_slider(
@@ -571,7 +580,6 @@ def show_ai_insights():
                 """, unsafe_allow_html=True)
                 for suggestion in marketing_insights['optimization_suggestions']:
                     st.write(f"• {suggestion}")
-
 
 if __name__ == "__main__":
     main()
