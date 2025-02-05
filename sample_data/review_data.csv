@@ -1,0 +1,9 @@
+date,product_id,rating,review_text
+2024-01-01,P001,4.5,"Great product, very satisfied"
+2024-01-01,P002,3.8,"Good but could be better"
+2024-01-02,P001,5.0,"Excellent quality"
+2024-01-02,P003,4.2,"Nice features"
+2024-01-03,P002,4.0,"Satisfied with purchase"
+2024-01-03,P003,3.5,"Average performance"
+2024-01-04,P001,4.8,"Would recommend"
+2024-01-04,P002,4.1,"Good value for money"
