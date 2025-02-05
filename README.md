@@ -1,4 +1,3 @@
-
 # Business Analytics Dashboard
 
 A comprehensive analytics dashboard built with Streamlit for visualizing and analyzing business metrics across sales, marketing, and customer reviews.
@@ -83,4 +82,10 @@ All dependencies are automatically installed through pyproject.toml when you run
 ## Security
 
 The dashboard includes authentication protection and secure data handling. Credentials are required to access the analytics features.
+
+## 🎥 Demo Video
+
+Watch the demo video here: [Business Analytics Dashboard Video](https://vimeo.com/1053849253?share=copy)
+
+<iframe src="https://player.vimeo.com/video/1053849253" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
 
