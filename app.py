@@ -3,31 +3,18 @@ import pandas as pd
 from utils.data_processor import DataProcessor
 from utils.visualizations import create_sales_charts, create_marketing_charts, create_review_charts
 from utils.predictions import predict_trends, generate_recommendations
-from utils.advanced_analytics import AdvancedAnalytics # Added import
+from utils.advanced_analytics import AdvancedAnalytics  # Added import
 import io
 
 # Page configuration and styling
-st.set_page_config(
-    page_title="Business Analytics Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Business Analytics Dashboard",
+                   page_icon="📊",
+                   layout="wide",
+                   initial_sidebar_state="expanded")
 
 # Initialize theme in session state
 if 'theme' not in st.session_state:
     st.session_state.theme = 'light'
-
-# Load custom CSS
-with open('style.css') as f:
-    st.markdown(f'''
-        <style>
-            {f.read()}
-        </style>
-        <script>
-            document.documentElement.setAttribute('data-theme', '{st.session_state.theme}');
-        </script>
-    ''', unsafe_allow_html=True)
 
 # Initialize session state
 if 'sales_data' not in st.session_state:
@@ -37,26 +24,26 @@ if 'marketing_data' not in st.session_state:
 if 'review_data' not in st.session_state:
     st.session_state.review_data = None
 
+
 def main():
     # Sidebar with modern styling
     with st.sidebar:
-        st.image("https://img.icons8.com/color/96/000000/dashboard-layout.png", width=50)
+        st.image("https://img.icons8.com/color/96/000000/dashboard-layout.png",
+                 width=50)
         st.title("Navigation")
 
         # Theme toggle
         theme = st.select_slider(
             "Theme",
             options=['Light', 'Dark'],
-            value='Light' if st.session_state.theme == 'light' else 'Dark'
-        )
+            value='Light' if st.session_state.theme == 'light' else 'Dark')
         st.session_state.theme = theme.lower()
 
         # Navigation
-        page = st.radio(
-            "",
-            ["📥 Data Upload", "📈 Sales Analytics", "🎯 Marketing Analytics", 
-             "⭐ Review Analytics", "🔮 Predictions"]
-        )
+        page = st.radio("", [
+            "📥 Data Upload", "📈 Sales Analytics", "🎯 Marketing Analytics",
+            "⭐ Review Analytics", "🔮 Predictions"
+        ])
 
     # Main content area with modern header
     st.markdown(f"""
@@ -64,7 +51,8 @@ def main():
             <h1>Business Analytics Dashboard</h1>
             <p style='color: var(--text-secondary);'>Transform your data into actionable insights</p>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
 
     if "Data Upload" in page:
         show_data_upload()
@@ -76,6 +64,7 @@ def main():
         show_review_analytics()
     elif "Predictions" in page:
         show_predictions()
+
 
 def show_data_upload():
     st.header("📥 Data Upload")
@@ -111,11 +100,13 @@ def show_data_upload():
             <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                 <h3 style='text-align: center; color: var(--text-primary);'>Sales Data</h3>
             </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
         sales_file = st.file_uploader("", type=['csv'], key='sales_upload')
         if sales_file:
             try:
-                st.session_state.sales_data = DataProcessor.process_sales_data(sales_file)
+                st.session_state.sales_data = DataProcessor.process_sales_data(
+                    sales_file)
                 st.success("✅ Sales data uploaded successfully!")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
@@ -125,11 +116,15 @@ def show_data_upload():
             <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                 <h3 style='text-align: center; color: var(--text-primary);'>Marketing Data</h3>
             </div>
-        """, unsafe_allow_html=True)
-        marketing_file = st.file_uploader("", type=['csv'], key='marketing_upload')
+        """,
+                    unsafe_allow_html=True)
+        marketing_file = st.file_uploader("",
+                                          type=['csv'],
+                                          key='marketing_upload')
         if marketing_file:
             try:
-                st.session_state.marketing_data = DataProcessor.process_marketing_data(marketing_file)
+                st.session_state.marketing_data = DataProcessor.process_marketing_data(
+                    marketing_file)
                 st.success("✅ Marketing data uploaded successfully!")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
@@ -139,14 +134,17 @@ def show_data_upload():
             <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
                 <h3 style='text-align: center; color: var(--text-primary);'>Review Data</h3>
             </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
         review_file = st.file_uploader("", type=['csv'], key='review_upload')
         if review_file:
             try:
-                st.session_state.review_data = DataProcessor.process_review_data(review_file)
+                st.session_state.review_data = DataProcessor.process_review_data(
+                    review_file)
                 st.success("✅ Review data uploaded successfully!")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
+
 
 def show_sales_analytics():
     if st.session_state.sales_data is None:
@@ -159,7 +157,8 @@ def show_sales_analytics():
     col1, col2, col3, col4 = st.columns(4)
     total_revenue = st.session_state.sales_data['revenue'].sum()
     total_sales = st.session_state.sales_data['quantity'].sum()
-    avg_order_value = total_revenue / len(st.session_state.sales_data) if len(st.session_state.sales_data)>0 else 0
+    avg_order_value = total_revenue / len(st.session_state.sales_data) if len(
+        st.session_state.sales_data) > 0 else 0
     unique_products = st.session_state.sales_data['product_id'].nunique()
 
     with col1:
@@ -176,17 +175,18 @@ def show_sales_analytics():
         <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
             <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
     date_range = st.date_input(
         "",
         value=(st.session_state.sales_data['date'].min(),
                st.session_state.sales_data['date'].max()),
-        key='sales_date_range'
-    )
+        key='sales_date_range')
 
     # Create visualizations
     fig_sales = create_sales_charts(st.session_state.sales_data, date_range)
     st.plotly_chart(fig_sales, use_container_width=True)
+
 
 def show_marketing_analytics():
     if st.session_state.marketing_data is None:
@@ -200,7 +200,8 @@ def show_marketing_analytics():
     total_spend = st.session_state.marketing_data['spend'].sum()
     total_impressions = st.session_state.marketing_data['impressions'].sum()
     total_clicks = st.session_state.marketing_data['clicks'].sum()
-    avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+    avg_ctr = (total_clicks / total_impressions *
+               100) if total_impressions > 0 else 0
 
     with col1:
         st.metric("Total Spend", f"${total_spend:,.2f}")
@@ -216,17 +217,19 @@ def show_marketing_analytics():
         <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
             <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
     date_range = st.date_input(
         "",
         value=(st.session_state.marketing_data['date'].min(),
                st.session_state.marketing_data['date'].max()),
-        key='marketing_date_range'
-    )
+        key='marketing_date_range')
 
     # Create visualizations
-    fig_marketing = create_marketing_charts(st.session_state.marketing_data, date_range)
+    fig_marketing = create_marketing_charts(st.session_state.marketing_data,
+                                            date_range)
     st.plotly_chart(fig_marketing, use_container_width=True)
+
 
 def show_review_analytics():
     if st.session_state.review_data is None:
@@ -240,11 +243,13 @@ def show_review_analytics():
 
     # Process sentiment analysis
     with st.spinner("Analyzing sentiments..."):
-        review_data_with_sentiment = AdvancedAnalytics.analyze_review_sentiments(st.session_state.review_data.copy())
+        review_data_with_sentiment = AdvancedAnalytics.analyze_review_sentiments(
+            st.session_state.review_data.copy())
 
     avg_rating = review_data_with_sentiment['rating'].mean()
     total_reviews = len(review_data_with_sentiment)
-    positive_sentiments = len(review_data_with_sentiment[review_data_with_sentiment['sentiment_label'] == 'Positive'])
+    positive_sentiments = len(review_data_with_sentiment[
+        review_data_with_sentiment['sentiment_label'] == 'Positive'])
     avg_sentiment = review_data_with_sentiment['sentiment_polarity'].mean()
 
     with col1:
@@ -261,8 +266,11 @@ def show_review_analytics():
 
     # Sentiment distribution
     sentiment_dist = pd.DataFrame({
-        'Sentiment': review_data_with_sentiment['sentiment_label'].value_counts(),
-        'Percentage': review_data_with_sentiment['sentiment_label'].value_counts(normalize=True) * 100
+        'Sentiment':
+        review_data_with_sentiment['sentiment_label'].value_counts(),
+        'Percentage':
+        review_data_with_sentiment['sentiment_label'].value_counts(
+            normalize=True) * 100
     })
 
     col1, col2 = st.columns(2)
@@ -272,7 +280,8 @@ def show_review_analytics():
             <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
                 <h4 style='color: var(--text-primary);'>Sentiment Distribution</h4>
             </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
         st.dataframe(sentiment_dist, use_container_width=True)
 
     with col2:
@@ -280,18 +289,20 @@ def show_review_analytics():
             <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
                 <h4 style='color: var(--text-primary);'>Sentiment vs Rating</h4>
             </div>
-        """, unsafe_allow_html=True)
-        sentiment_vs_rating = review_data_with_sentiment.groupby('rating')['sentiment_polarity'].mean()
+        """,
+                    unsafe_allow_html=True)
+        sentiment_vs_rating = review_data_with_sentiment.groupby(
+            'rating')['sentiment_polarity'].mean()
         st.line_chart(sentiment_vs_rating)
 
     # Show sample reviews with sentiment
     st.subheader("📝 Sample Reviews with Sentiment Analysis")
-    sample_reviews = review_data_with_sentiment.sample(min(5, len(review_data_with_sentiment)))
+    sample_reviews = review_data_with_sentiment.sample(
+        min(5, len(review_data_with_sentiment)))
     for _, review in sample_reviews.iterrows():
         sentiment_color = (
             "🟢" if review['sentiment_label'] == 'Positive' else
-            "🔴" if review['sentiment_label'] == 'Negative' else "⚪"
-        )
+            "🔴" if review['sentiment_label'] == 'Negative' else "⚪")
         st.markdown(f"""
             <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 0.5rem; margin: 0.5rem 0;'>
                 <p style='color: var(--text-primary); margin: 0;'>
@@ -299,24 +310,27 @@ def show_review_analytics():
                 </p>
                 <p style='color: var(--text-secondary); margin: 0.5rem 0;'>"{review['review_text']}"</p>
             </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
 
     # Date range filter
     st.markdown("""
         <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
             <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
     date_range = st.date_input(
         "",
         value=(st.session_state.review_data['date'].min(),
                st.session_state.review_data['date'].max()),
-        key='review_date_range'
-    )
+        key='review_date_range')
 
     # Create visualizations
-    fig_reviews = create_review_charts(st.session_state.review_data, date_range)
+    fig_reviews = create_review_charts(st.session_state.review_data,
+                                       date_range)
     st.plotly_chart(fig_reviews, use_container_width=True)
+
 
 def show_predictions():
     if st.session_state.sales_data is None:
@@ -330,9 +344,14 @@ def show_predictions():
         <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
             <h4 style='color: var(--text-primary);'>Prediction Settings</h4>
         </div>
-    """, unsafe_allow_html=True)
-    prediction_days = st.slider("Select prediction horizon (days)", 7, 90, 30,
-                              help="Choose the number of days to forecast into the future")
+    """,
+                unsafe_allow_html=True)
+    prediction_days = st.slider(
+        "Select prediction horizon (days)",
+        7,
+        90,
+        30,
+        help="Choose the number of days to forecast into the future")
 
     # Show predictions
     with st.spinner("Generating predictions..."):
@@ -347,12 +366,12 @@ def show_predictions():
         # Display recommendations in a modern table
         st.markdown("""
             <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-        """, unsafe_allow_html=True)
-        st.dataframe(
-            recommendations.style.background_gradient(cmap='Blues'),
-            use_container_width=True
-        )
+        """,
+                    unsafe_allow_html=True)
+        st.dataframe(recommendations.style.background_gradient(cmap='Blues'),
+                     use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
