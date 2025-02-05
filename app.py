@@ -341,36 +341,84 @@ def show_predictions():
 
     # Prediction controls
     st.markdown("""
-        <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+        <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
             <h4 style='color: var(--text-primary);'>Prediction Settings</h4>
         </div>
-    """,
-                unsafe_allow_html=True)
-    prediction_days = st.slider(
-        "Select prediction horizon (days)",
-        7,
-        90,
-        30,
-        help="Choose the number of days to forecast into the future")
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        prediction_days = st.slider(
+            "Prediction Horizon (Days)",
+            min_value=7,
+            max_value=90,
+            value=30,
+            help="Choose the number of days to forecast into the future"
+        )
 
     # Show predictions
     with st.spinner("Generating predictions..."):
-        trends = predict_trends(st.session_state.sales_data, prediction_days)
-        st.plotly_chart(trends, use_container_width=True)
+        try:
+            fig, predictions, ci_lower, ci_upper = predict_trends(st.session_state.sales_data, prediction_days)
+            if fig is not None:
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Show prediction metrics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(
+                        "Average Predicted Revenue",
+                        f"${predictions.mean():,.2f}",
+                        delta=f"{((predictions.mean() / st.session_state.sales_data['revenue'].mean() - 1) * 100):,.1f}%"
+                    )
+                with col2:
+                    st.metric(
+                        "Prediction Range",
+                        f"${predictions.max():,.2f}",
+                        f"${predictions.min():,.2f}"
+                    )
+                with col3:
+                    confidence_range = f"${(ci_upper - ci_lower).mean():,.2f}"
+                    st.metric("Average Confidence Range", confidence_range)
+
+        except Exception as e:
+            st.error(f"An error occurred during prediction: {e}")
+
 
     # Show recommendations
     st.subheader("📋 Product Recommendations")
     with st.spinner("Generating recommendations..."):
         recommendations = generate_recommendations(st.session_state.sales_data)
+        if recommendations is not None:
+            # Display recommendations in a modern table
+            st.markdown("""
+                <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                    <h4 style='color: var(--text-primary);'>Top 5 Products by Performance</h4>
+                </div>
+            """, unsafe_allow_html=True)
 
-        # Display recommendations in a modern table
-        st.markdown("""
-            <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-        """,
-                    unsafe_allow_html=True)
-        st.dataframe(recommendations.style.background_gradient(cmap='Blues'),
-                     use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            # Style the dataframe
+            styled_recommendations = recommendations.style\
+                .background_gradient(cmap='Blues', subset=['composite_score'])\
+                .format({
+                    'total_revenue': '${:,.2f}',
+                    'avg_revenue': '${:,.2f}',
+                    'composite_score': '{:.3f}'
+                })
+
+            st.dataframe(styled_recommendations, use_container_width=True)
+
+            # Add explanation of the composite score
+            st.info("""
+                💡 The composite score is calculated based on:
+                - Revenue performance (40%)
+                - Sales quantity (40%)
+                - Sales stability (20%)
+
+                Lower scores indicate better overall performance.
+            """)
+        else:
+            st.warning("No recommendations could be generated.")
 
 
 if __name__ == "__main__":
