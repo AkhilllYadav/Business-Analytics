@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 from utils.data_processor import DataProcessor
 from utils.visualizations import create_sales_charts, create_marketing_charts, create_review_charts
-from utils.predictions import predict_trends, generate_recommendations
-from utils.advanced_analytics import AdvancedAnalytics  # Added import
+from utils.predictions import AdvancedPredictions  # Fixed import
+from utils.advanced_analytics import AdvancedAnalytics
 import io
+import numpy as np
 
 # Page configuration and styling
 st.set_page_config(page_title="Business Analytics Dashboard",
@@ -337,7 +338,7 @@ def show_predictions():
         st.warning("⚠️ Please upload sales data first!")
         return
 
-    st.header("🔮 Predictions and Recommendations")
+    st.header("🔮 Advanced Sales Predictions")
 
     # Prediction controls
     st.markdown("""
@@ -357,68 +358,92 @@ def show_predictions():
         )
 
     # Show predictions
-    with st.spinner("Generating predictions..."):
+    with st.spinner("Generating advanced predictions..."):
         try:
-            fig, predictions, ci_lower, ci_upper = predict_trends(st.session_state.sales_data, prediction_days)
-            if fig is not None:
+            fig, ensemble_predictions, model_results = AdvancedPredictions.predict_trends(
+                st.session_state.sales_data, prediction_days)
+
+            if fig is not None and ensemble_predictions is not None:
+                # Display the main visualization
                 st.plotly_chart(fig, use_container_width=True)
 
                 # Show prediction metrics
+                st.subheader("📊 Model Performance Summary")
+
                 col1, col2, col3 = st.columns(3)
+
+                # Calculate average metrics across models
+                avg_metrics = {
+                    'rmse': np.mean([results['rmse'] for results in model_results.values()]),
+                    'r2': np.mean([results['r2'] for results in model_results.values()]),
+                    'mape': np.mean([results['mape'] for results in model_results.values()])
+                }
+
+                with col1:
+                    st.metric(
+                        "Average Prediction RMSE",
+                        f"${avg_metrics['rmse']:,.2f}",
+                    )
+                with col2:
+                    st.metric(
+                        "Average R² Score",
+                        f"{avg_metrics['r2']:.3f}",
+                    )
+                with col3:
+                    st.metric(
+                        "Average MAPE",
+                        f"{avg_metrics['mape']*100:.1f}%",
+                    )
+
+                # Show detailed model comparison
+                st.subheader("📈 Model Comparison")
+
+                model_comparison = pd.DataFrame({
+                    'Model': list(model_results.keys()),
+                    'RMSE': [results['rmse'] for results in model_results.values()],
+                    'R² Score': [results['r2'] for results in model_results.values()],
+                    'MAPE (%)': [results['mape'] * 100 for results in model_results.values()]
+                })
+
+                st.dataframe(
+                    model_comparison.style
+                    .format({
+                        'RMSE': '${:,.2f}',
+                        'R² Score': '{:.3f}',
+                        'MAPE (%)': '{:.1f}%'
+                    })
+                    .background_gradient(cmap='Blues', subset=['R² Score'])
+                    .background_gradient(cmap='RdYlGn_r', subset=['RMSE', 'MAPE (%)'])
+                )
+
+                # Show ensemble prediction summary
+                st.subheader("🎯 Ensemble Prediction Summary")
+
+                col1, col2 = st.columns(2)
                 with col1:
                     st.metric(
                         "Average Predicted Revenue",
-                        f"${predictions.mean():,.2f}",
-                        delta=f"{((predictions.mean() / st.session_state.sales_data['revenue'].mean() - 1) * 100):,.1f}%"
+                        f"${ensemble_predictions.mean():,.2f}",
+                        delta=f"{((ensemble_predictions.mean() / st.session_state.sales_data['revenue'].mean() - 1) * 100):,.1f}%"
                     )
                 with col2:
                     st.metric(
                         "Prediction Range",
-                        f"${predictions.max():,.2f}",
-                        f"${predictions.min():,.2f}"
+                        f"${ensemble_predictions.max():,.2f}",
+                        f"${ensemble_predictions.min():,.2f}"
                     )
-                with col3:
-                    confidence_range = f"${(ci_upper - ci_lower).mean():,.2f}"
-                    st.metric("Average Confidence Range", confidence_range)
+
+                # Add explanation of the prediction methodology
+                st.info("""
+                    💡 **Prediction Methodology:**
+                    - Multiple models (Linear Regression, Random Forest, XGBoost) are trained on historical data
+                    - Each model's performance is evaluated using various metrics (RMSE, R², MAPE)
+                    - Final predictions are generated using an ensemble approach, weighted by model performance
+                    - Feature importance analysis helps understand key drivers of sales patterns
+                """)
 
         except Exception as e:
             st.error(f"An error occurred during prediction: {e}")
-
-
-    # Show recommendations
-    st.subheader("📋 Product Recommendations")
-    with st.spinner("Generating recommendations..."):
-        recommendations = generate_recommendations(st.session_state.sales_data)
-        if recommendations is not None:
-            # Display recommendations in a modern table
-            st.markdown("""
-                <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-                    <h4 style='color: var(--text-primary);'>Top 5 Products by Performance</h4>
-                </div>
-            """, unsafe_allow_html=True)
-
-            # Style the dataframe
-            styled_recommendations = recommendations.style\
-                .background_gradient(cmap='Blues', subset=['composite_score'])\
-                .format({
-                    'total_revenue': '${:,.2f}',
-                    'avg_revenue': '${:,.2f}',
-                    'composite_score': '{:.3f}'
-                })
-
-            st.dataframe(styled_recommendations, use_container_width=True)
-
-            # Add explanation of the composite score
-            st.info("""
-                💡 The composite score is calculated based on:
-                - Revenue performance (40%)
-                - Sales quantity (40%)
-                - Sales stability (20%)
-
-                Lower scores indicate better overall performance.
-            """)
-        else:
-            st.warning("No recommendations could be generated.")
 
 
 if __name__ == "__main__":
