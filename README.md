@@ -85,7 +85,6 @@ The dashboard includes authentication protection and secure data handling. Crede
 
 ## 🎥 Demo Video
 
-Watch the demo video here: [Business Analytics Dashboard Video](https://vimeo.com/1053849253?share=copy)
+Watch the demo video here: [Business Analytics Dashboard Video](https://player.vimeo.com/video/1053849253)
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;"> <iframe src="https://player.vimeo.com/video/1053849253" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe> </div>
 
