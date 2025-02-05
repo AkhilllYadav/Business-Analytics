@@ -13,9 +13,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize theme in session state
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'light'
+
 # Load custom CSS
 with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    st.markdown(f'''
+        <style>
+            {f.read()}
+        </style>
+        <script>
+            document.documentElement.setAttribute('data-theme', '{st.session_state.theme}');
+        </script>
+    ''', unsafe_allow_html=True)
 
 # Initialize session state
 if 'sales_data' not in st.session_state:
@@ -30,6 +41,16 @@ def main():
     with st.sidebar:
         st.image("https://img.icons8.com/color/96/000000/dashboard-layout.png", width=50)
         st.title("Navigation")
+
+        # Theme toggle
+        theme = st.select_slider(
+            "Theme",
+            options=['Light', 'Dark'],
+            value='Light' if st.session_state.theme == 'light' else 'Dark'
+        )
+        st.session_state.theme = theme.lower()
+
+        # Navigation
         page = st.radio(
             "",
             ["📥 Data Upload", "📈 Sales Analytics", "🎯 Marketing Analytics", 
@@ -37,10 +58,10 @@ def main():
         )
 
     # Main content area with modern header
-    st.markdown("""
+    st.markdown(f"""
         <div style='text-align: center; padding: 1rem;'>
             <h1>Business Analytics Dashboard</h1>
-            <p style='color: #666;'>Transform your data into actionable insights</p>
+            <p style='color: var(--text-secondary);'>Transform your data into actionable insights</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -86,8 +107,8 @@ def show_data_upload():
 
     with col1:
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <h3 style='text-align: center;'>Sales Data</h3>
+            <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                <h3 style='text-align: center; color: var(--text-primary);'>Sales Data</h3>
             </div>
         """, unsafe_allow_html=True)
         sales_file = st.file_uploader("", type=['csv'], key='sales_upload')
@@ -100,8 +121,8 @@ def show_data_upload():
 
     with col2:
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <h3 style='text-align: center;'>Marketing Data</h3>
+            <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                <h3 style='text-align: center; color: var(--text-primary);'>Marketing Data</h3>
             </div>
         """, unsafe_allow_html=True)
         marketing_file = st.file_uploader("", type=['csv'], key='marketing_upload')
@@ -114,8 +135,8 @@ def show_data_upload():
 
     with col3:
         st.markdown("""
-            <div style='background-color: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <h3 style='text-align: center;'>Review Data</h3>
+            <div style='background-color: var(--card-bg); padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                <h3 style='text-align: center; color: var(--text-primary);'>Review Data</h3>
             </div>
         """, unsafe_allow_html=True)
         review_file = st.file_uploader("", type=['csv'], key='review_upload')
@@ -151,8 +172,8 @@ def show_sales_analytics():
 
     # Date range filter with modern styling
     st.markdown("""
-        <div style='background-color: white; padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-            <h4>Select Date Range</h4>
+        <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+            <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
     """, unsafe_allow_html=True)
     date_range = st.date_input(
@@ -191,8 +212,8 @@ def show_marketing_analytics():
 
     # Date range filter
     st.markdown("""
-        <div style='background-color: white; padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-            <h4>Select Date Range</h4>
+        <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+            <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
     """, unsafe_allow_html=True)
     date_range = st.date_input(
@@ -231,8 +252,8 @@ def show_review_analytics():
 
     # Date range filter
     st.markdown("""
-        <div style='background-color: white; padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-            <h4>Select Date Range</h4>
+        <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+            <h4 style='color: var(--text-primary);'>Select Date Range</h4>
         </div>
     """, unsafe_allow_html=True)
     date_range = st.date_input(
@@ -255,8 +276,8 @@ def show_predictions():
 
     # Prediction controls
     st.markdown("""
-        <div style='background-color: white; padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-            <h4>Prediction Settings</h4>
+        <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+            <h4 style='color: var(--text-primary);'>Prediction Settings</h4>
         </div>
     """, unsafe_allow_html=True)
     prediction_days = st.slider("Select prediction horizon (days)", 7, 90, 30,
@@ -274,7 +295,7 @@ def show_predictions():
 
         # Display recommendations in a modern table
         st.markdown("""
-            <div style='background-color: white; padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+            <div style='background-color: var(--card-bg); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
         """, unsafe_allow_html=True)
         st.dataframe(
             recommendations.style.background_gradient(cmap='Blues'),
