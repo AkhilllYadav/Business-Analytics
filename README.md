@@ -84,6 +84,3 @@ All dependencies are automatically installed through pyproject.toml when you run
 
 The dashboard includes authentication protection and secure data handling. Credentials are required to access the analytics features.
 
-## License
-
-This project is licensed under the MIT License.
