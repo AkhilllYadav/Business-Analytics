@@ -3,6 +3,7 @@ import pandas as pd
 from utils.data_processor import DataProcessor
 from utils.visualizations import create_sales_charts, create_marketing_charts, create_review_charts
 from utils.predictions import predict_trends, generate_recommendations
+from utils.advanced_analytics import AdvancedAnalytics # Added import
 import io
 
 # Page configuration and styling
@@ -236,19 +237,69 @@ def show_review_analytics():
 
     # Quick metrics
     col1, col2, col3, col4 = st.columns(4)
-    avg_rating = st.session_state.review_data['rating'].mean()
-    total_reviews = len(st.session_state.review_data)
-    five_star_reviews = len(st.session_state.review_data[st.session_state.review_data['rating'] == 5])
-    five_star_percentage = (five_star_reviews / total_reviews * 100) if total_reviews > 0 else 0
+
+    # Process sentiment analysis
+    with st.spinner("Analyzing sentiments..."):
+        review_data_with_sentiment = AdvancedAnalytics.analyze_review_sentiments(st.session_state.review_data.copy())
+
+    avg_rating = review_data_with_sentiment['rating'].mean()
+    total_reviews = len(review_data_with_sentiment)
+    positive_sentiments = len(review_data_with_sentiment[review_data_with_sentiment['sentiment_label'] == 'Positive'])
+    avg_sentiment = review_data_with_sentiment['sentiment_polarity'].mean()
 
     with col1:
         st.metric("Average Rating", f"{avg_rating:.2f} ⭐")
     with col2:
         st.metric("Total Reviews", f"{total_reviews:,}")
     with col3:
-        st.metric("5-Star Reviews", f"{five_star_reviews:,}")
+        st.metric("Positive Sentiments", f"{positive_sentiments:,}")
     with col4:
-        st.metric("5-Star Percentage", f"{five_star_percentage:.1f}%")
+        st.metric("Avg Sentiment Score", f"{avg_sentiment:.2f}")
+
+    # Sentiment Analysis Section
+    st.subheader("📊 Sentiment Analysis")
+
+    # Sentiment distribution
+    sentiment_dist = pd.DataFrame({
+        'Sentiment': review_data_with_sentiment['sentiment_label'].value_counts(),
+        'Percentage': review_data_with_sentiment['sentiment_label'].value_counts(normalize=True) * 100
+    })
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+            <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                <h4 style='color: var(--text-primary);'>Sentiment Distribution</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        st.dataframe(sentiment_dist, use_container_width=True)
+
+    with col2:
+        st.markdown("""
+            <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                <h4 style='color: var(--text-primary);'>Sentiment vs Rating</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        sentiment_vs_rating = review_data_with_sentiment.groupby('rating')['sentiment_polarity'].mean()
+        st.line_chart(sentiment_vs_rating)
+
+    # Show sample reviews with sentiment
+    st.subheader("📝 Sample Reviews with Sentiment Analysis")
+    sample_reviews = review_data_with_sentiment.sample(min(5, len(review_data_with_sentiment)))
+    for _, review in sample_reviews.iterrows():
+        sentiment_color = (
+            "🟢" if review['sentiment_label'] == 'Positive' else
+            "🔴" if review['sentiment_label'] == 'Negative' else "⚪"
+        )
+        st.markdown(f"""
+            <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 0.5rem; margin: 0.5rem 0;'>
+                <p style='color: var(--text-primary); margin: 0;'>
+                    {sentiment_color} Rating: {review['rating']} | Sentiment Score: {review['sentiment_polarity']:.2f}
+                </p>
+                <p style='color: var(--text-secondary); margin: 0.5rem 0;'>"{review['review_text']}"</p>
+            </div>
+        """, unsafe_allow_html=True)
 
     # Date range filter
     st.markdown("""
