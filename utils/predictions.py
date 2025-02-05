@@ -32,6 +32,192 @@ class AdvancedPredictions:
         return df[feature_columns], df['revenue']
 
     @staticmethod
+    def analyze_product_trends(df):
+        """Analyze product performance trends."""
+        try:
+            # Group by product and calculate metrics
+            product_trends = df.groupby(['product_id', pd.Grouper(key='date', freq='M')]).agg({
+                'revenue': ['sum', 'mean', 'std'],
+                'quantity': ['sum', 'mean', 'std']
+            }).reset_index()
+
+            # Calculate growth rates
+            product_trends.columns = ['product_id', 'date', 'total_revenue', 'avg_revenue', 
+                                    'std_revenue', 'total_quantity', 'avg_quantity', 'std_quantity']
+
+            # Calculate month-over-month growth
+            product_trends['revenue_growth'] = product_trends.groupby('product_id')['total_revenue'].pct_change()
+            product_trends['quantity_growth'] = product_trends.groupby('product_id')['total_quantity'].pct_change()
+
+            return product_trends
+
+        except Exception as e:
+            st.error(f"Error analyzing product trends: {str(e)}")
+            return None
+
+    @staticmethod
+    def calculate_product_scores(df):
+        """Calculate comprehensive product performance scores."""
+        try:
+            product_metrics = df.groupby('product_id').agg({
+                'revenue': ['sum', 'mean', 'std', 'count'],
+                'quantity': ['sum', 'mean', 'std']
+            }).reset_index()
+
+            # Flatten column names
+            product_metrics.columns = ['product_id', 'total_revenue', 'avg_revenue', 'std_revenue', 
+                                     'transaction_count', 'total_quantity', 'avg_quantity', 'std_quantity']
+
+            # Calculate additional metrics
+            product_metrics['revenue_stability'] = 1 - (product_metrics['std_revenue'] / product_metrics['avg_revenue'])
+            product_metrics['quantity_stability'] = 1 - (product_metrics['std_quantity'] / product_metrics['avg_quantity'])
+            product_metrics['avg_transaction_value'] = product_metrics['total_revenue'] / product_metrics['transaction_count']
+
+            # Calculate rankings
+            metrics_to_rank = ['total_revenue', 'total_quantity', 'revenue_stability', 
+                             'quantity_stability', 'avg_transaction_value']
+
+            for metric in metrics_to_rank:
+                product_metrics[f'{metric}_rank'] = product_metrics[metric].rank(ascending=False)
+
+            # Calculate weighted composite score
+            weights = {
+                'total_revenue_rank': 0.3,
+                'total_quantity_rank': 0.25,
+                'revenue_stability_rank': 0.2,
+                'quantity_stability_rank': 0.15,
+                'avg_transaction_value_rank': 0.1
+            }
+
+            product_metrics['composite_score'] = sum(
+                product_metrics[metric] * weight 
+                for metric, weight in weights.items()
+            )
+
+            return product_metrics
+
+        except Exception as e:
+            st.error(f"Error calculating product scores: {str(e)}")
+            return None
+
+    @staticmethod
+    def generate_recommendations(df, top_n=5):
+        """Generate advanced product recommendations with detailed insights."""
+        try:
+            # Calculate overall product scores
+            product_scores = AdvancedPredictions.calculate_product_scores(df)
+            product_trends = AdvancedPredictions.analyze_product_trends(df)
+
+            if product_scores is None or product_trends is None:
+                return None
+
+            # Get top performing products
+            top_products = product_scores.nsmallest(top_n, 'composite_score')
+
+            # Enrich recommendations with trend data
+            latest_trends = product_trends.sort_values('date').groupby('product_id').last()
+
+            recommendations = pd.merge(
+                top_products,
+                latest_trends[['revenue_growth', 'quantity_growth']],
+                on='product_id'
+            )
+
+            # Add performance insights
+            recommendations['performance_insight'] = recommendations.apply(
+                lambda x: f"Revenue Growth: {x['revenue_growth']*100:.1f}% | "
+                         f"Quantity Growth: {x['quantity_growth']*100:.1f}% | "
+                         f"Stability Score: {x['revenue_stability']:.2f}",
+                axis=1
+            )
+
+            # Select and rename columns for display
+            display_columns = [
+                'product_id', 'total_revenue', 'avg_transaction_value',
+                'revenue_growth', 'quantity_growth', 'revenue_stability',
+                'performance_insight', 'composite_score'
+            ]
+
+            return recommendations[display_columns]
+
+        except Exception as e:
+            st.error(f"Error generating recommendations: {str(e)}")
+            return None
+
+    @staticmethod
+    def create_recommendation_visualizations(recommendations):
+        """Create visualizations for product recommendations."""
+        try:
+            if recommendations is None or len(recommendations) == 0:
+                return None
+
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=(
+                    'Revenue by Product',
+                    'Growth Metrics',
+                    'Stability Scores',
+                    'Composite Score Distribution'
+                )
+            )
+
+            # Revenue by Product
+            fig.add_trace(
+                go.Bar(
+                    x=recommendations['product_id'],
+                    y=recommendations['total_revenue'],
+                    name='Total Revenue',
+                    marker_color='#0080ff'
+                ),
+                row=1, col=1
+            )
+
+            # Growth Metrics
+            fig.add_trace(
+                go.Bar(
+                    x=recommendations['product_id'],
+                    y=recommendations['revenue_growth'] * 100,
+                    name='Revenue Growth %',
+                    marker_color='#00ff00'
+                ),
+                row=1, col=2
+            )
+
+            # Stability Scores
+            fig.add_trace(
+                go.Bar(
+                    x=recommendations['product_id'],
+                    y=recommendations['revenue_stability'],
+                    name='Revenue Stability',
+                    marker_color='#ff8000'
+                ),
+                row=2, col=1
+            )
+
+            # Composite Scores
+            fig.add_trace(
+                go.Bar(
+                    x=recommendations['product_id'],
+                    y=recommendations['composite_score'],
+                    name='Composite Score',
+                    marker_color='#ff0080'
+                ),
+                row=2, col=2
+            )
+
+            fig.update_layout(
+                height=800,
+                showlegend=True,
+                template='plotly_dark' if st.session_state.theme == 'dark' else 'plotly_white'
+            )
+
+            return fig
+
+        except Exception as e:
+            st.error(f"Error creating visualizations: {str(e)}")
+            return None
+
+    @staticmethod
     def train_models(X, y):
         """Train multiple models and return their predictions."""
         # Split data

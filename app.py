@@ -338,113 +338,83 @@ def show_predictions():
         st.warning("⚠️ Please upload sales data first!")
         return
 
-    st.header("🔮 Advanced Sales Predictions")
+    st.header("🔮 Advanced Analytics & Recommendations")
 
     # Prediction controls
     st.markdown("""
         <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
-            <h4 style='color: var(--text-primary);'>Prediction Settings</h4>
+            <h4 style='color: var(--text-primary);'>Product Performance Analysis</h4>
         </div>
     """, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        prediction_days = st.slider(
-            "Prediction Horizon (Days)",
-            min_value=7,
-            max_value=90,
-            value=30,
-            help="Choose the number of days to forecast into the future"
-        )
-
-    # Show predictions
-    with st.spinner("Generating advanced predictions..."):
+    # Show recommendations
+    st.subheader("📊 Top Product Recommendations")
+    with st.spinner("Analyzing product performance..."):
         try:
-            fig, ensemble_predictions, model_results = AdvancedPredictions.predict_trends(
-                st.session_state.sales_data, prediction_days)
+            recommendations = AdvancedPredictions.generate_recommendations(
+                st.session_state.sales_data)
 
-            if fig is not None and ensemble_predictions is not None:
-                # Display the main visualization
-                st.plotly_chart(fig, use_container_width=True)
+            if recommendations is not None:
+                # Create visualization
+                fig = AdvancedPredictions.create_recommendation_visualizations(recommendations)
+                if fig is not None:
+                    st.plotly_chart(fig, use_container_width=True)
 
-                # Show prediction metrics
-                st.subheader("📊 Model Performance Summary")
+                # Display detailed recommendations
+                st.markdown("""
+                    <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 1rem; margin: 1rem 0;'>
+                        <h4 style='color: var(--text-primary);'>Detailed Product Analysis</h4>
+                    </div>
+                """, unsafe_allow_html=True)
 
-                col1, col2, col3 = st.columns(3)
-
-                # Calculate average metrics across models
-                avg_metrics = {
-                    'rmse': np.mean([results['rmse'] for results in model_results.values()]),
-                    'r2': np.mean([results['r2'] for results in model_results.values()]),
-                    'mape': np.mean([results['mape'] for results in model_results.values()])
-                }
-
-                with col1:
-                    st.metric(
-                        "Average Prediction RMSE",
-                        f"${avg_metrics['rmse']:,.2f}",
-                    )
-                with col2:
-                    st.metric(
-                        "Average R² Score",
-                        f"{avg_metrics['r2']:.3f}",
-                    )
-                with col3:
-                    st.metric(
-                        "Average MAPE",
-                        f"{avg_metrics['mape']*100:.1f}%",
-                    )
-
-                # Show detailed model comparison
-                st.subheader("📈 Model Comparison")
-
-                model_comparison = pd.DataFrame({
-                    'Model': list(model_results.keys()),
-                    'RMSE': [results['rmse'] for results in model_results.values()],
-                    'R² Score': [results['r2'] for results in model_results.values()],
-                    'MAPE (%)': [results['mape'] * 100 for results in model_results.values()]
-                })
-
-                st.dataframe(
-                    model_comparison.style
+                # Style the dataframe
+                styled_recommendations = recommendations.style\
+                    .background_gradient(cmap='Blues', subset=['composite_score'])\
+                    .background_gradient(cmap='RdYlGn', subset=['revenue_growth', 'quantity_growth'])\
                     .format({
-                        'RMSE': '${:,.2f}',
-                        'R² Score': '{:.3f}',
-                        'MAPE (%)': '{:.1f}%'
+                        'total_revenue': '${:,.2f}',
+                        'avg_transaction_value': '${:,.2f}',
+                        'revenue_growth': '{:.1%}',
+                        'quantity_growth': '{:.1%}',
+                        'revenue_stability': '{:.2f}',
+                        'composite_score': '{:.3f}'
                     })
-                    .background_gradient(cmap='Blues', subset=['R² Score'])
-                    .background_gradient(cmap='RdYlGn_r', subset=['RMSE', 'MAPE (%)'])
-                )
 
-                # Show ensemble prediction summary
-                st.subheader("🎯 Ensemble Prediction Summary")
+                st.dataframe(styled_recommendations, use_container_width=True)
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric(
-                        "Average Predicted Revenue",
-                        f"${ensemble_predictions.mean():,.2f}",
-                        delta=f"{((ensemble_predictions.mean() / st.session_state.sales_data['revenue'].mean() - 1) * 100):,.1f}%"
-                    )
-                with col2:
-                    st.metric(
-                        "Prediction Range",
-                        f"${ensemble_predictions.max():,.2f}",
-                        f"${ensemble_predictions.min():,.2f}"
-                    )
-
-                # Add explanation of the prediction methodology
+                # Add explanation
                 st.info("""
-                    💡 **Prediction Methodology:**
-                    - Multiple models (Linear Regression, Random Forest, XGBoost) are trained on historical data
-                    - Each model's performance is evaluated using various metrics (RMSE, R², MAPE)
-                    - Final predictions are generated using an ensemble approach, weighted by model performance
-                    - Feature importance analysis helps understand key drivers of sales patterns
+                    💡 **Understanding the Metrics:**
+                    - **Total Revenue**: Total sales revenue generated by the product
+                    - **Avg Transaction Value**: Average revenue per transaction
+                    - **Revenue Growth**: Month-over-month revenue growth rate
+                    - **Quantity Growth**: Month-over-month sales volume growth rate
+                    - **Revenue Stability**: Score between 0-1 indicating revenue consistency
+                    - **Composite Score**: Overall performance score (lower is better)
+
+                    The composite score weighs multiple factors:
+                    - Revenue Performance (30%)
+                    - Sales Volume (25%)
+                    - Revenue Stability (20%)
+                    - Volume Stability (15%)
+                    - Transaction Value (10%)
                 """)
 
-        except Exception as e:
-            st.error(f"An error occurred during prediction: {e}")
+                # Product-specific insights
+                st.subheader("🔍 Product Insights")
+                for _, product in recommendations.iterrows():
+                    st.markdown(f"""
+                        <div style='background-color: var(--background-secondary); padding: 1rem; border-radius: 0.5rem; margin: 0.5rem 0;'>
+                            <h5 style='color: var(--text-primary);'>Product {product['product_id']}</h5>
+                            <p style='color: var(--text-secondary);'>{product['performance_insight']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
 
+            else:
+                st.warning("Unable to generate recommendations. Please check your data.")
+
+        except Exception as e:
+            st.error(f"An error occurred while analyzing products: {str(e)}")
 
 if __name__ == "__main__":
     main()
